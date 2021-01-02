@@ -6,14 +6,14 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
-  @Route('/:id')
+  @Route('/:id', ['get', 'post'])
   me(req: Request, res: Response) {
     return res.json({
       name: req.params.id,
     });
   }
 
-  @Route('/')
+  @Route('/', 'get')
   helloWorld(_req: Request, res: Response) {
     return res.json({
       message: this.userService.helloWorld(),

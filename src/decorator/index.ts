@@ -1,3 +1,4 @@
+import { httpMethods } from '@/utils/type';
 import express, { Router } from 'express';
 
 export const Controller = (prefix: string): ClassDecorator => {
@@ -10,7 +11,10 @@ export const Service = (): ClassDecorator => {
   return () => {};
 };
 
-export const Route = (path: string): MethodDecorator => {
+export const Route = (
+  path: string,
+  methods: httpMethods | httpMethods[],
+): MethodDecorator => {
   return (
     target: any,
     propertyKey: string | symbol,
@@ -22,7 +26,8 @@ export const Route = (path: string): MethodDecorator => {
         [
           {
             path,
-            method: descriptor.value,
+            methods,
+            controller: descriptor.value,
           },
         ],
         target,
@@ -31,7 +36,8 @@ export const Route = (path: string): MethodDecorator => {
       const controllers = Reflect.getMetadata('controllers', target);
       controllers.push({
         path,
-        method: descriptor.value,
+        methods,
+        controller: descriptor.value,
       });
       Reflect.defineMetadata('controllers', controllers, target);
     }
@@ -61,9 +67,12 @@ export class Injector {
       controller.constructor,
     );
 
-    routes.map((route: any) =>
-      router.get(route.path, route.method.bind(controller)),
-    );
+    routes.map((route: any) => {
+      if (!Array.isArray(route.methods)) route.methods = [route.methods];
+      route.methods.map((method: httpMethods) => {
+        router[method](route.path, route.controller.bind(controller));
+      });
+    });
 
     appRouter.use(prefixRoute, router);
   }
